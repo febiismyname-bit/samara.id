@@ -1,0 +1,33 @@
+# Database & data runtime (jangan dipublikasikan)
+smartwarga.sqlite3
+smartwarga-data/
+*.sqlite3
+*.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.python-version
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+
+# Logs & temp
+*.log
+*.tmp
+*.bak
+*.swp
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Sistem / hasil build
+nohup.out
+*.pid

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Dasbor RT/RW SAMARA untuk memantau dan menindaklanjuti laporan fasilitas publik.">
+    <title>Dasbor RT/RW - SAMARA</title>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/city-buildings.png">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- SheetJS untuk Ekspor Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha256-yVBhl8r4CaB1tt7h2g02+xnacVj/6KiOewyWxdhiPJk=" crossorigin=""></script>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased">
+
+    <!-- Navbar Admin -->
+    <nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">🏢</span>
+                    <a href="admin.html" class="font-bold text-xl text-gray-900 tracking-tight">
+                        SAMARA <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full ml-1">RT/RW</span>
+                    </a>
+                </div>
+                <div class="flex items-center gap-4">
+                    <a href="index.html" class="text-sm font-medium text-gray-500 hover:text-emerald-600">Kembali ke Web Warga</a>
+                    <button type="button" id="btnLogoutAdmin" class="text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 px-4 py-2 rounded-full transition-colors cursor-pointer">
+                        Keluar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Admin -->
+    <main id="admin" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+        <header>
+            <h1 class="text-3xl font-bold text-gray-900">Pemantauan Wilayah RT/RW</h1>
+            <p class="text-gray-500 mt-1">Pantau titik lokasi laporan warga dan kelola tindak lanjut fasilitas publik.</p>
+        </header>
+
+        <!-- Statistik Cards -->
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-center gap-4">
+                <div class="w-14 h-14 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center text-2xl">📄</div>
+                <div>
+                    <p class="text-sm text-gray-500">Total Laporan</p>
+                    <p id="adminStatTotal" class="text-2xl font-bold text-gray-900 mt-1">0</p>
+                </div>
+            </div>
+            <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-center gap-4">
+                <div class="w-14 h-14 rounded-full bg-purple-50 text-purple-500 flex items-center justify-center text-2xl">👥</div>
+                <div>
+                    <p class="text-sm text-gray-500">Warga Aktif</p>
+                    <p id="adminStatWarga" class="text-2xl font-bold text-gray-900 mt-1">0</p>
+                </div>
+            </div>
+            <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-center gap-4">
+                <div class="w-14 h-14 rounded-full bg-yellow-50 text-yellow-500 flex items-center justify-center text-2xl">⚙️</div>
+                <div>
+                    <p class="text-sm text-gray-500">Sedang Diproses</p>
+                    <p id="adminStatDiproses" class="text-2xl font-bold text-gray-900 mt-1">0</p>
+                </div>
+            </div>
+            <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-center gap-4">
+                <div class="w-14 h-14 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center text-2xl">✅</div>
+                <div>
+                    <p class="text-sm text-gray-500">Selesai Ditangani</p>
+                    <p id="adminStatSelesai" class="text-2xl font-bold text-gray-900 mt-1">0</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Peta Wilayah Leaflet -->
+        <section class="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h2 class="text-lg font-bold text-gray-900">Peta Titik Rawan & Aduan</h2>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" class="filter-btn active px-4 py-2 rounded-full text-sm font-medium bg-emerald-600 text-white shadow-sm" data-filter="all">Semua</button>
+                    <button type="button" class="filter-btn px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200" data-filter="Diterima">Laporan Baru</button>
+                    <button type="button" class="filter-btn px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200" data-filter="Diproses">Diproses</button>
+                    <button type="button" class="filter-btn px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200" data-filter="Selesai">Selesai</button>
+                </div>
+            </div>
+            <div id="mapFull" class="w-full bg-gray-50 relative z-0" role="application" aria-label="Peta lokasi laporan warga" style="height: 450px;"></div>
+        </section>
+
+        <!-- Tabel Detail Laporan -->
+        <section class="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h2 class="text-lg font-bold text-gray-900">Daftar Detail Laporan</h2>
+                <div class="flex items-center gap-3 w-full sm:w-auto">
+                    <button type="button" id="btnExportExcel" class="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-full shadow-sm hover:bg-emerald-700 transition-colors">
+                        <span>📥</span> Ekspor Excel
+                    </button>
+                    <div class="relative w-full sm:w-64">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">🔍</span>
+                        <input type="text" id="adminSearch" aria-label="Cari laporan admin" placeholder="Cari ID, nama, kategori..." class="pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="data-table w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
+                            <th scope="col" class="px-6 py-4 font-semibold">ID</th>
+                            <th scope="col" class="px-6 py-4 font-semibold">Pelapor</th>
+                            <th scope="col" class="px-6 py-4 font-semibold">Kategori</th>
+                            <th scope="col" class="px-6 py-4 font-semibold">Alamat Lokasi</th>
+                            <th scope="col" class="px-6 py-4 font-semibold">Status</th>
+                            <th scope="col" class="px-6 py-4 font-semibold text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminTableBody" class="divide-y divide-gray-100 text-sm">
+                        <!-- Render dari script.js -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js" integrity="sha256-Tobw4i5HcbW4qsJMYTxmGAameLGvooTQPPatA9PiGgo=" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tombol Ekspor Excel
+            const btnExportExcel = document.getElementById('btnExportExcel');
+            if (btnExportExcel) {
+                btnExportExcel.addEventListener('click', function() {
+                    const table = document.querySelector('.data-table');
+                    if (!table) return alert("Tabel data tidak ditemukan!");
+                    const wb = XLSX.utils.table_to_book(table, {sheet: "Laporan Warga"});
+                    XLSX.writeFile(wb, "Data_Laporan_SAMARA.xlsx");
+                });
+            }
+        });
+    </script>
+</body>
+</html>

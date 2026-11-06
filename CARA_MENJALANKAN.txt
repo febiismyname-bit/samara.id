@@ -1,0 +1,33 @@
+SAMARA - Cara Menjalankan di Komputer Lokal
+===========================================
+
+Yang dibutuhkan:
+- Windows 10/11
+- Python 3 sudah terinstall
+- Koneksi internet untuk peta Leaflet/OpenStreetMap dan widget cuaca
+
+Cara menjalankan:
+1. Buka folder SAMARA ini.
+2. Klik dua kali file `JALANKAN_SAMARA.bat`
+   atau buka PowerShell di folder ini dan ketik:
+   python server.py
+3. Saat pertama kali dijalankan, server akan meminta pembuatan kata sandi admin.
+   Buat kata sandi admin minimal 12 karakter.
+4. Buka browser dan ketik:
+   http://127.0.0.1:8000
+5. Untuk masuk admin, klik menu "Masuk Admin" di halaman.
+
+Mengganti kata sandi admin:
+1. Hentikan server dulu dengan Ctrl + C, atau tutup jendela server.
+2. Jalankan:
+   python server.py --reset-admin-password
+3. Masukkan kata sandi baru dua kali.
+4. Jalankan lagi server seperti biasa.
+
+Menghentikan server:
+- Tekan Ctrl + C di jendela server, atau tutup jendela server.
+
+Catatan penting:
+- Database admin disimpan otomatis di folder `SAMARA-data` di sebelah folder SAMARA, bukan di dalam folder web ini.
+- Jangan mengunggah folder `SAMARA-data` atau file `.sqlite3` ke internet/GitHub.
+- Jika hanya ingin melihat tampilan, membuka `index.html` langsung bisa berjalan, tetapi fitur admin/database/pelacakan server tidak berfungsi.

@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Laporkan dan pantau kondisi fasilitas publik bersama SAMARA.">
+    <title>SAMARA - Kota Cerdas untuk Masa Depan</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Style Utama -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/city-buildings.png">
+    
+    <!-- LEAFLET CSS (Pengganti Google Maps) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container nav-container">
+            <div class="brand-wrap">
+                <a href="#beranda" class="logo" aria-label="SAMARA logo">
+                    <img src="logo-samara-modern.png" alt="Logo SAMARA">
+                </a>
+                <div class="brand-tagline">Sistem Aduan Masyarakat untuk Aksi Responsif dan Akuntable</div>
+            </div>
+            <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navMenu" aria-label="Buka menu navigasi">
+                <span></span><span></span><span></span>
+            </button>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="#beranda" class="active">Beranda</a></li>
+                <li><a href="#lapor">Lapor</a></li>
+                <li><a href="#lacak">Lacak</a></li>
+                <li><a href="#peta">Peta</a></li>
+                <li><a href="#edukasi">Edukasi</a></li>
+                <li>
+                    <button type="button" class="weather-trigger" id="btnCuaca" aria-haspopup="dialog" aria-controls="weatherModal">
+                        <span aria-hidden="true">🌤️</span> Cuaca
+                    </button>
+                </li>
+                <li><a href="#" id="navAdmin" aria-haspopup="dialog" aria-controls="loginModal">Masuk Admin</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <aside id="apiErrorNotice" class="api-error-notice" role="alert" hidden>
+        <span id="apiErrorMessage"></span>
+        <button type="button" id="btnCloseApiError" aria-label="Tutup pemberitahuan">×</button>
+    </aside>
+
+    <main>
+        <!-- Section: Beranda -->
+        <section class="hero" id="beranda">
+            <div class="container hero-layout">
+                <div class="hero-copy">
+                    <span class="badge">🌍 SDG 11 <span aria-hidden="true">•</span> Kota Berkelanjutan</span>
+                    <h1>Perubahan kota<br>dimulai dari <span class="highlight">warga.</span></h1>
+                    <p>Temukan masalah di sekitar, laporkan dengan mudah, lalu pantau perkembangannya. Bersama kita wujudkan Bandar Lampung yang lebih nyaman.</p>
+                    <div class="hero-buttons">
+                        <a href="#lapor" class="btn btn-primary">📝 Buat Laporan</a>
+                        <a href="#lacak" class="btn btn-primary">🔍 Lacak Laporan</a>
+                    </div>
+                    <p class="hero-note"><span aria-hidden="true">🔒</span> Laporan dikirim ke data admin dan juga disimpan di perangkat ini.</p>
+                </div>
+                <aside class="hero-card" aria-label="Langkah mudah menggunakan SAMARA">
+                    <div class="hero-card-top">
+                        <span class="hero-card-icon" aria-hidden="true">🚀</span>
+                        <span class="hero-card-label">Warga bergerak, kota bertumbuh</span>
+                    </div>
+                    <h2>Aksi kecil, dampak nyata.</h2>
+                    <p>Mulai dari satu laporan yang jelas dan lokasi yang tepat.</p>
+                    <div class="hero-card-steps">
+                        <div><span>01</span><strong>Temukan masalah</strong><span aria-hidden="true">✓</span></div>
+                        <div><span>02</span><strong>Kirim laporan</strong><span aria-hidden="true">→</span></div>
+                        <div><span>03</span><strong>Pantau prosesnya</strong><span aria-hidden="true">⏱️</span></div>
+                    </div>
+                    <a href="#cara-kerja" class="hero-card-link">Lihat cara kerjanya <span aria-hidden="true">↗</span></a>
+                </aside>
+            </div>
+        </section>
+
+        <!-- Section: Statistik -->
+        <section class="stats">
+            <div class="container">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📈</div>
+                        <div class="stat-number" id="totalLaporan">0</div>
+                        <div class="stat-label">Total Laporan</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-number" id="totalSelesai">0</div>
+                        <div class="stat-label">Selesai Ditangani</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⏱️</div>
+                        <div class="stat-number" id="totalProses">0</div>
+                        <div class="stat-label">Sedang Diproses</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-number" id="totalWarga">0</div>
+                        <div class="stat-label">Warga Aktif</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Edukasi SDG -->
+        <section class="about-sdg">
+            <div class="container">
+                <div class="section-header">
+                    <span class="badge">🌱 Sustainable Development Goals</span>
+                    <h2>Mendukung SDG 11: Kota & Permukiman Berkelanjutan</h2>
+                </div>
+                <div class="sdg-content">
+                    <div class="sdg-text">
+                        <p>SDG 11 bertujuan menjadikan kota dan permukiman <strong>inklusif, aman, tangguh, dan berkelanjutan</strong>. Target 11.3 mendorong pengelolaan permukiman yang <strong>partisipatif</strong>.</p>
+                        <p>SAMARA memberdayakan warga untuk memantau dan melaporkan kondisi fasilitas publik, menciptakan tata kelola kota yang transparan dan berbasis data.</p>
+                        <div class="sdg-features">
+                            <div class="feature">
+                                <span class="feature-icon">🤝</span>
+                                <div><h4>Partisipatif</h4><p>Warga terlibat aktif dalam pengawasan kota</p></div>
+                            </div>
+                            <div class="feature">
+                                <span class="feature-icon">📍</span>
+                                <div><h4>Transparan</h4><p>Status laporan dapat dilacak siapa saja</p></div>
+                            </div>
+                            <div class="feature">
+                                <span class="feature-icon">🧠</span>
+                                <div><h4>Cerdas</h4><p>Berbasis data dan teknologi modern</p></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Cara Kerja -->
+        <section class="how-it-works" id="cara-kerja">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Cara Kerja SAMARA</h2>
+                    <p>Hanya 3 langkah mudah untuk berpartisipasi</p>
+                </div>
+                <div class="steps-grid">
+                    <div class="step-card">
+                        <div class="step-number">1</div>
+                        <h3>Laporkan</h3>
+                        <p>Isi form laporan dengan foto, lokasi, dan deskripsi kerusakan fasilitas publik.</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">2</div>
+                        <h3>Pantau</h3>
+                        <p>Lacak status laporan Anda dari Diterima hingga Selesai.</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">3</div>
+                        <h3>Nikmati</h3>
+                        <p>Rasakan fasilitas publik yang lebih baik berkat kolaborasi warga dan pemerintah.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Buat Laporan -->
+        <section class="page-header" id="lapor">
+            <div class="container">
+                <h2>📝 Buat Laporan di Bandar Lampung</h2>
+                <p>Laporkan kerusakan fasilitas publik di wilayah Bandar Lampung.</p>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <div class="container">
+                <form id="formLaporan" class="form-card">
+                    <p role="note" style="margin-bottom: 1rem; color: var(--gray);">
+                        Laporan akan dikirim ke data admin jika server aktif, dan juga disimpan di browser perangkat ini untuk pelacakan. Jika server tidak aktif, laporan tetap tersimpan lokal tetapi belum masuk ke data admin.
+                    </p>
+                    <div class="form-group">
+                        <label for="nama">Nama Pelapor *</label>
+                        <input type="text" id="nama" name="nama" placeholder="Masukkan nama lengkap" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input type="email" id="email" name="email" placeholder="contoh@email.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="kategori">Kategori Kerusakan *</label>
+                        <select id="kategori" name="kategori" required>
+                            <option value="">-- Pilih Kategori --</option>
+                            <option value="Jalan Rusak">🛣️ Jalan Rusak</option>
+                            <option value="Lampu Mati">💡 Lampu Penerangan Mati</option>
+                            <option value="Drainase">🌊 Drainase Tersumbat</option>
+                            <option value="Taman">🌳 Taman/Fasilitas Umum Rusak</option>
+                            <option value="Sampah">🗑️ Penumpukan Sampah</option>
+                            <option value="Lainnya">📌 Lainnya</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="alamat">Alamat/Lokasi *</label>
+                        <input type="text" id="alamat" name="alamat" placeholder="Contoh: Jl. Merdeka No. 10, Bandar Lampung" required>
+                        <p id="addressMapStatus" class="address-map-status" role="status" aria-live="polite"></p>
+                        <div id="addressCandidates" class="address-candidates" aria-label="Hasil pencarian alamat"></div>
+                    </div>
+                    
+                    <!-- KOTAK PETA FORM (Sudah disesuaikan untuk Leaflet) -->
+                    <div class="form-group">
+                        <p id="mapFormLabel" class="form-label">Lokasi di Peta (Bandar Lampung)</p>
+                        <!-- z-index: 1 diperlukan agar popup peta tidak tertumpuk elemen lain -->
+                        <div id="mapForm" role="application" aria-labelledby="mapFormLabel" style="height: 300px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #ccc; z-index: 1;"></div>
+                        <small>Pencarian alamat menggunakan <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>. Pilih hasil yang paling sesuai dan pastikan pin sudah tepat sebelum mengirim laporan.</small>
+                        <br>
+                        <button type="button" id="btnLokasi" class="btn btn-outline btn-sm" style="color:var(--primary); border-color:var(--primary); margin-top:10px;">📍 Gunakan Lokasi Saya</button>
+                        <input type="hidden" id="lat" name="lat">
+                        <input type="hidden" id="lng" name="lng">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="deskripsi">Deskripsi Kerusakan *</label>
+                        <textarea id="deskripsi" name="deskripsi" rows="4" placeholder="Jelaskan kerusakan secara detail..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="foto">Upload Foto Bukti</label>
+                        <input type="file" id="foto" name="foto" accept="image/jpeg,image/png">
+                        <small>Format: JPG, PNG. Maks: 2MB</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">🚀 Kirim Laporan</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Section: Lacak Laporan -->
+        <section class="page-header" id="lacak">
+            <div class="container">
+                <h2>🔍 Lacak Status Laporan</h2>
+                <p>Masukkan ID Laporan dan email yang dipakai saat membuat laporan.</p>
+            </div>
+        </section>
+
+        <section class="track-section">
+            <div class="container">
+                <div class="track-box">
+                    <div class="form-group">
+                        <label for="searchLaporan">Cari Laporan</label>
+                        <div class="search-group">
+                            <input type="text" id="searchLaporan" inputmode="numeric" placeholder="ID Laporan (contoh: 12)" aria-label="ID Laporan">
+                            <input type="email" id="searchEmail" placeholder="Email yang dipakai saat lapor" aria-label="Email yang dipakai saat lapor">
+                            <button type="button" id="btnCari" class="btn btn-primary">Cari</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="hasilLacak" class="hasil-lacak" style="display: none;"></div>
+            </div>
+        </section>
+
+        <!-- Section: Peta Sebaran Umum -->
+        <section class="page-header" id="peta">
+            <div class="container">
+                <h2>🗺️ Peta Sebaran Bandar Lampung</h2>
+                <p>Lihat sebaran laporan fasilitas publik di wilayah Bandar Lampung.</p>
+            </div>
+        </section>
+
+        <section class="map-section">
+            <div class="container">
+                <div class="map-filter">
+                    <button type="button" class="filter-btn active" data-filter="all">Semua</button>
+                    <button type="button" class="filter-btn" data-filter="Diterima">🟡 Diterima</button>
+                    <button type="button" class="filter-btn" data-filter="Diproses">🟠 Diproses</button>
+                    <button type="button" class="filter-btn" data-filter="Selesai">🟢 Selesai</button>
+                </div>
+                
+                <!-- KOTAK PETA FULL (Leaflet) -->
+                <div id="mapFull" style="height: 600px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); z-index: 1; border: 1px solid #e2e8f0;"></div>
+                
+                <p style="margin-top: 0.75rem; color: var(--gray);">Peta dan laporan dibatasi pada area Bandar Lampung.</p>
+                
+                <div class="map-legend">
+                    <h4>Keterangan:</h4>
+                    <div class="legend-items">
+                        <span><span class="dot dot-yellow"></span> Diterima</span>
+                        <span><span class="dot dot-orange"></span> Diproses</span>
+                        <span><span class="dot dot-green"></span> Selesai</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Edukasi & SDG -->
+        <section class="page-header" id="edukasi">
+            <div class="container">
+                <h2>📚 Edukasi & Panduan Warga</h2>
+                <p>Empowering Global Innovators for an Intelligent Future</p>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <div class="container">
+                <div class="sdg-content">
+                    <h2 style="background: var(--gradient-smart); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 2rem; margin-bottom: 1rem;">Apa itu SDG 11?</h2>
+                    <p style="font-size: 1.1rem; line-height: 1.8; color: var(--gray);">
+                        <strong>Sustainable Development Goals (SDG) 11</strong> bertujuan menjadikan kota dan permukiman <strong>inklusif, aman, tangguh, dan berkelanjutan</strong>. Target 11.3 mendorong urbanisasi yang inklusif dan pengelolaan permukiman yang partisipatif.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Login Admin -->
+    <div class="login-modal" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle" hidden>
+        <section class="login-card">
+            <button type="button" class="modal-close" id="btnTutupLogin" aria-label="Tutup">×</button>
+            <span class="badge" style="color:var(--dark);">SAMARA</span>
+            <h2 id="loginTitle">Masuk Admin</h2>
+            <p class="login-subtitle">Masuk untuk mengelola laporan warga.</p>
+            <form id="formLogin" class="login-form" novalidate>
+                <div class="form-group">
+                    <label for="passwordAdmin">Kata Sandi Admin *</label>
+                    <input type="password" id="passwordAdmin" name="password" placeholder="Kata sandi admin" autocomplete="current-password" required>
+                </div>
+                <p class="login-error" id="loginError" role="alert" hidden></p>
+                <button type="submit" class="btn btn-primary btn-full">Masuk</button>
+            </form>
+        </section>
+    </div>
+
+    <!-- Modal Cuaca -->
+    <div class="weather-modal" id="weatherModal" role="dialog" aria-modal="true" aria-labelledby="weatherTitle" aria-hidden="true" hidden>
+        <section class="weather-card">
+            <button type="button" class="weather-close" id="btnTutupCuaca" aria-label="Tutup">×</button>
+            <p class="weather-location">📍 Cuaca saat ini</p>
+            <h2 id="weatherTitle">Bandar Lampung</h2>
+            <label class="weather-district-label" for="weatherDistrict">Pilih Kecamatan di Bandar Lampung</label>
+            <select id="weatherDistrict" class="weather-district-select" aria-label="Pilih kecamatan untuk cuaca">
+                <option value="bandar-lampung" data-lat="-5.4290" data-lng="105.2620">Bandar Lampung (Pusat Kota)</option>
+                <option value="bumi-waras" data-lat="-5.4350" data-lng="105.2950">Bumi Waras</option>
+                <option value="enggal" data-lat="-5.4320" data-lng="105.2550">Enggal</option>
+                <option value="kedamaian" data-lat="-5.4250" data-lng="105.2700">Kedamaian</option>
+                <option value="kedaton" data-lat="-5.3850" data-lng="105.2550">Kedaton</option>
+                <option value="kemiling" data-lat="-5.3650" data-lng="105.2100">Kemiling</option>
+                <option value="labuhan-ratu" data-lat="-5.4150" data-lng="105.2500">Labuhan Ratu</option>
+                <option value="langkapura" data-lat="-5.4000" data-lng="105.2400">Langkapura</option>
+                <option value="panjang" data-lat="-5.4900" data-lng="105.3150">Panjang</option>
+                <option value="rajabasa" data-lat="-5.3750" data-lng="105.2450">Rajabasa</option>
+                <option value="sukabumi" data-lat="-5.4200" data-lng="105.2650">Sukabumi</option>
+                <option value="sukarame" data-lat="-5.4000" data-lng="105.2700">Sukarame</option>
+                <option value="tanjung-senang" data-lat="-5.4000" data-lng="105.2300">Tanjung Senang</option>
+                <option value="tanjung-karang-barat" data-lat="-5.4279" data-lng="105.2500">Tanjung Karang Barat</option>
+                <option value="tanjung-karang-pusat" data-lat="-5.4389" data-lng="105.2600">Tanjung Karang Pusat</option>
+                <option value="tanjung-karang-timur" data-lat="-5.4430" data-lng="105.2780">Tanjung Karang Timur</option>
+                <option value="teluk-betung-barat" data-lat="-5.4450" data-lng="105.2650">Teluk Betung Barat</option>
+                <option value="teluk-betung-selatan" data-lat="-5.4640" data-lng="105.2750">Teluk Betung Selatan</option>
+                <option value="teluk-betung-timur" data-lat="-5.4580" data-lng="105.2950">Teluk Betung Timur</option>
+                <option value="teluk-betung-utara" data-lat="-5.4500" data-lng="105.2700">Teluk Betung Utara</option>
+                <option value="way-halim" data-lat="-5.4050" data-lng="105.2850">Way Halim</option>
+            </select>
+            <button type="button" class="btn btn-outline" id="btnCuacaLokasi" style="color:var(--primary); border-color:var(--primary); margin-top:0.75rem;width:100%;">
+                  📍 Gunakan Lokasi Saya
+            </button>
+            <div id="weatherContent" class="weather-content" aria-live="polite">
+                <p>Tekan tombol untuk memuat cuaca terkini.</p>
+            </div>
+            <div class="weather-actions">
+                <button type="button" class="btn btn-primary" id="btnMuatCuaca">Muat Cuaca</button>
+            </div>
+        </section>
+    </div>
+
+    <!-- Asisten SAMARA -->
+    <section class="chat-widget" aria-label="Asisten SAMARA">
+        <div class="chat-panel" id="chatPanel" role="dialog" aria-labelledby="chatTitle" hidden>
+            <header class="chat-header">
+                <div class="chat-avatar" aria-hidden="true">🤖</div>
+                <div>
+                    <h2 id="chatTitle">Asisten SAMARA</h2>
+                    <p>Tanya seputar laporan warga</p>
+                </div>
+                <button type="button" class="chat-close" id="chatClose" aria-label="Tutup chatbot">×</button>
+            </header>
+            <div class="chat-messages" id="chatMessages" role="log" aria-live="polite" aria-relevant="additions">
+                <p class="chat-message assistant">Halo! Saya bisa membantu proses pengaduan warga, menentukan kategori laporan, mengecek status, dan memberikan informasi yang dibutuhkan.</p>
+            </div>
+            <div class="chat-suggestions" id="chatSuggestions">
+                <button type="button">Bagaimana proses pengaduan?</button>
+                <button type="button">Kategori laporan yang cocok?</button>
+                <button type="button">Cek status laporan saya</button>
+                <button type="button">Informasi untuk warga</button>
+            </div>
+            <form class="chat-form" id="chatForm">
+                <label class="visually-hidden" for="chatInput">Tulis pertanyaan</label>
+                <textarea id="chatInput" rows="1" maxlength="1200" placeholder="Tulis pertanyaan..." required></textarea>
+                <button type="submit" id="chatSend" aria-label="Kirim pertanyaan">Kirim</button>
+            </form>
+        </div>
+        <button type="button" class="chat-launcher" id="chatLauncher" aria-expanded="false" aria-controls="chatPanel">
+            <span aria-hidden="true">💬</span><span>Tanya AI</span>
+        </button>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <h3>🏢 SAMARA</h3>
+                    <p>Mendukung SDG 11: Kota dan Permukiman yang Berkelanjutan</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Navigasi</h4>
+                    <a href="#beranda">Beranda</a>
+                    <a href="#lapor">Buat Laporan</a>
+                    <a href="#lacak">Lacak Laporan</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2026 SAMARA | Lomba Nasional Web Desain Gematik</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Script Eksternal (urutan dipertahankan; tidak memblokir render) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js" integrity="sha256-Tobw4i5HcbW4qsJMYTxmGAameLGvooTQPPatA9PiGgo=" crossorigin="" defer></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
+
+    <!-- Script Utama (Logic Map Leaflet dkk ada di sini) -->
+    <script src="script.js" defer></script>
+</body>
+</html>
